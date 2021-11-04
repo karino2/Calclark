@@ -10,18 +10,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
-import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.tooling.preview.Preview
 import io.github.karino2.calclark.ui.theme.CalclarkTheme
 
-data class Equation(val expression: String, val answer: String)
+data class Equation(val expression: String, val answer: String, val exception: String = "")
+
 
 class MainActivity : ComponentActivity() {
     private val intp = Interpreter()
@@ -48,11 +49,20 @@ class MainActivity : ComponentActivity() {
                     TextField(
                         value = textState,
                         onValueChange = {textState = it},
-                        modifier = Modifier.fillMaxWidth().align(Alignment.End),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.End),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                         keyboardActions = KeyboardActions(onSend = {
-                            val res = intp.evalString(textState)
-                            history = history + listOf(Equation(textState, res.toString()))
+
+                            val resEx =
+                                try {
+                                    val res = intp.evalString(textState)
+                                    Equation(textState, res.toString())
+                                }catch(e: Exception) {
+                                    Equation(textState, "", e.message ?: "")
+                                }
+                            history = history + listOf(resEx)
                             textState = ""
                         })
                     )
