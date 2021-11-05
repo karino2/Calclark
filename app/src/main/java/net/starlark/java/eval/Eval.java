@@ -45,6 +45,7 @@ import net.starlark.java.syntax.LambdaExpression;
 import net.starlark.java.syntax.ListExpression;
 import net.starlark.java.syntax.LoadStatement;
 import net.starlark.java.syntax.Location;
+import net.starlark.java.syntax.PowerExpression;
 import net.starlark.java.syntax.Resolver;
 import net.starlark.java.syntax.ReturnStatement;
 import net.starlark.java.syntax.SliceExpression;
@@ -477,6 +478,8 @@ final class Eval {
     switch (expr.kind()) {
       case BINARY_OPERATOR:
         return evalBinaryOperator(fr, (BinaryOperatorExpression) expr);
+      case POWER:
+        return evalPowerOperator(fr, (PowerExpression) expr);
       case COMPREHENSION:
         return evalComprehension(fr, (Comprehension) expr);
       case CONDITIONAL:
@@ -537,6 +540,33 @@ final class Eval {
           throw ex;
         }
     }
+  }
+
+  private static Object evalPowerOperator(StarlarkThread.Frame fr, PowerExpression powerExp)
+          throws EvalException, InterruptedException {
+    Object x = eval(fr, powerExp.getX());
+    Object y = eval(fr, powerExp.getY());
+    double xd = 0.0;
+    double yd = 0.0;
+    if (x instanceof StarlarkInt) {
+      xd = ((StarlarkInt)x).toFiniteDouble();
+    } else if (x instanceof StarlarkFloat) {
+      xd = ((StarlarkFloat)x).toDouble();
+    } else {
+      fr.setErrorLocation(powerExp.getOperatorLocation());
+      throw Starlark.errorf(
+              "unsupported power operation of x: %s", Starlark.type(x));
+    }
+    if (y instanceof StarlarkInt) {
+      yd = ((StarlarkInt)y).toFiniteDouble();
+    } else if (y instanceof StarlarkFloat) {
+      yd = ((StarlarkFloat)y).toDouble();
+    } else {
+      fr.setErrorLocation(powerExp.getOperatorLocation());
+      throw Starlark.errorf(
+              "unsupported power operation of y: %s", Starlark.type(y));
+    }
+    return StarlarkFloat.of( Math.pow(xd, yd) );
   }
 
   private static Object evalConditional(StarlarkThread.Frame fr, ConditionalExpression cond)

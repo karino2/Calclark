@@ -574,7 +574,6 @@ final class Parser {
   //          | '(' ')'                    // a tuple with zero elements
   //          | '(' expr ')'               // a parenthesized expression
   //          | dict_expression
-  //          | '-' primary_with_suffix
   private Expression parsePrimary() {
     switch (token.kind) {
       case INT:
@@ -644,16 +643,6 @@ final class Parser {
           return makeErrorExpression(lparenOffset, end);
         }
 
-      case MINUS:
-      case PLUS:
-      case TILDE:
-        {
-          TokenKind op = token.kind;
-          int offset = nextToken();
-          Expression x = parsePrimaryWithSuffix();
-          return new UnaryOperatorExpression(locs, op, offset, x);
-        }
-
       default:
         {
           int start = token.start;
@@ -714,12 +703,41 @@ final class Parser {
     return new SliceExpression(locs, e, lbracketOffset, start, end, step, rbracketOffset);
   }
 
+  // power = primary ["**" u_expr]
+  // u_expr = power | "-" u_expr | "+" u_expr | "~" u_expr
+  private Expression parseUnaryExpression() {
+    switch (token.kind) {
+      case MINUS:
+      case PLUS:
+      case TILDE:
+      {
+        TokenKind op = token.kind;
+        int offset = nextToken();
+        Expression x = parseUnaryExpression();
+        return new UnaryOperatorExpression(locs, op, offset, x);
+      }
+      default:
+      {
+        // power expression.
+        Expression x = parsePrimaryWithSuffix();
+        if (token.kind == TokenKind.STAR_STAR) {
+          int opOffset = nextToken();
+          Expression y = parseUnaryExpression();
+          return new PowerExpression(locs, x, opOffset, y);
+        } else {
+          return x;
+        }
+      }
+    }
+
+  }
+
   // Equivalent to 'exprlist' rule in Python grammar.
   // loop_variables = primary_with_suffix ( ',' primary_with_suffix )* ','?
   private Expression parseForLoopVariables() {
     // We cannot reuse parseExpression because it would parse the 'in' operator.
     // e.g.  "for i in e: pass"  -> we want to parse only "i" here.
-    Expression e1 = parsePrimaryWithSuffix();
+    Expression e1 = parseUnaryExpression();
     if (token.kind != TokenKind.COMMA) {
       return e1;
     }
@@ -732,7 +750,7 @@ final class Parser {
       if (EXPR_LIST_TERMINATOR_SET.contains(token.kind)) {
         break;
       }
-      elems.add(parsePrimaryWithSuffix());
+      elems.add(parseUnaryExpression());
     }
     return new ListExpression(locs, /*isTuple=*/ true, -1, elems, -1);
   }
@@ -872,7 +890,7 @@ final class Parser {
   }
 
   // binop_expression = binop_expression OP binop_expression
-  //                  | parsePrimaryWithSuffix
+  //                  | parseUnaryExpression
   // This function takes care of precedence between operators (see operatorPrecedence for
   // the order), and it assumes left-to-right associativity.
   private Expression parseBinOpExpression(int prec) {
@@ -953,7 +971,7 @@ final class Parser {
 
   private Expression parseTest(int prec) {
     if (prec >= operatorPrecedence.size()) {
-      return parsePrimaryWithSuffix();
+      return parseUnaryExpression();
     }
     if (token.kind == TokenKind.NOT && operatorPrecedence.get(prec).contains(TokenKind.NOT)) {
       return parseNotExpression(prec);

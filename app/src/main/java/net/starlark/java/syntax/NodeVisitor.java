@@ -67,6 +67,11 @@ public class NodeVisitor {
     visit(node.getY());
   }
 
+  public void visit(PowerExpression node) {
+    visit(node.getX());
+    visit(node.getY());
+  }
+
   public void visit(CallExpression node) {
     visit(node.getFunction());
     visitAll(node.getArguments());
