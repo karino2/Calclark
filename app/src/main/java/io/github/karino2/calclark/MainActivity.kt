@@ -1,9 +1,13 @@
 package io.github.karino2.calclark
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
@@ -31,8 +35,13 @@ data class Equation(val expression: String, val answer: String, val exception: S
 class MainActivity : ComponentActivity() {
     private val intp = Interpreter()
 
+    private val clipMgr by lazy { getSystemService(CLIPBOARD_SERVICE) as ClipboardManager}
+
+    private fun showToast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
             CalclarkTheme {
                 Column(modifier = Modifier.fillMaxSize()) {
@@ -47,7 +56,10 @@ class MainActivity : ComponentActivity() {
                         .weight(1.0f)
                         .verticalScroll(scrollState)) {
                         history.forEach {
-                            EquationRow(it)
+                            EquationRow(it, onCopyText = {text->
+                                clipMgr.setPrimaryClip(ClipData.newPlainText("Copied value", text))
+                                showToast("copied: $text")
+                            })
                         }
                     }
                     var textState by remember { mutableStateOf("") }
@@ -59,6 +71,9 @@ class MainActivity : ComponentActivity() {
                             .fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                         keyboardActions = KeyboardActions(onSend = {
+                            // ignore for empty case. (because often happens by accident).
+                            if (textState == "")
+                                return@KeyboardActions
 
                             val resEx =
                                 try {
@@ -82,9 +97,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun EquationRow(equation: Equation) {
+fun EquationRow(equation: Equation, onCopyText: (String)->Unit) {
     Column(modifier=Modifier.padding(0.dp, 2.dp)) {
-        Card(modifier=Modifier.fillMaxWidth(), border= BorderStroke(2.dp, Color.Black)) {
+        Card(modifier=Modifier.fillMaxWidth().clickable(onClick={ onCopyText(equation.expression) }), border= BorderStroke(2.dp, Color.Black)) {
             Text(equation.expression, fontSize = 20.sp, modifier=Modifier.padding(4.dp, 0.dp))
         }
         if (equation.isException) {
@@ -101,7 +116,7 @@ fun EquationRow(equation: Equation) {
                 Row(modifier=Modifier.height(IntrinsicSize.Min)) {
                     Text("=", fontSize = 20.sp, modifier = Modifier.padding(5.dp, 0.dp))
                     Divider(color = Color.Black, modifier = Modifier.fillMaxHeight().width(2.dp), thickness = 2.dp)
-                    Text(equation.answer, fontSize = 20.sp, modifier = Modifier.padding(5.dp, 0.dp))
+                    Text(equation.answer, fontSize = 20.sp, modifier = Modifier.padding(5.dp, 0.dp).clickable(onClick={ onCopyText(equation.answer) }))
                 }
             }
         }
