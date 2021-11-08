@@ -21,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.karino2.calclark.ui.theme.CalclarkTheme
@@ -39,62 +40,85 @@ class MainActivity : ComponentActivity() {
 
     private fun showToast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
 
+    private var history = mutableStateOf(emptyList<Equation>())
+    // var history by remember { mutableStateOf( listOf(Equation("3+4", "7")) ) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
-            CalclarkTheme {
-                Column(modifier = Modifier.fillMaxSize()) {
-
-                    var history by remember { mutableStateOf( emptyList<Equation>() ) }
-                    // var history by remember { mutableStateOf( listOf(Equation("3+4", "7")) ) }
-
-                    val scrollState = rememberScrollState()
-                    val cscope = rememberCoroutineScope()
-
-                    Column(modifier = Modifier
-                        .weight(1.0f)
-                        .verticalScroll(scrollState)) {
-                        history.forEach {
-                            EquationRow(it, onCopyText = {text->
-                                clipMgr.setPrimaryClip(ClipData.newPlainText("Copied value", text))
-                                showToast("copied: $text")
-                            })
+            Calclark(
+                history,
+                onEval = {text->
+                    val resEx =
+                        try {
+                            val res = intp.evalString(text)
+                            Equation(text, res.toString())
+                        } catch (e: Exception) {
+                            Equation(text, "", e.message ?: "")
                         }
-                    }
-                    var textState by remember { mutableStateOf("") }
-                    TextField(
-                        value = textState,
-                        placeholder= { Text("ex: (3**2)/4") },
-                        onValueChange = {textState = it},
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                        keyboardActions = KeyboardActions(onSend = {
-                            // ignore for empty case. (because often happens by accident).
-                            if (textState == "")
-                                return@KeyboardActions
-
-                            val resEx =
-                                try {
-                                    val res = intp.evalString(textState)
-                                    Equation(textState, res.toString())
-                                }catch(e: Exception) {
-                                    Equation(textState, "", e.message ?: "")
-                                }
-                            history = history + listOf(resEx)
-                            textState = ""
-                            cscope.launch {
-                                scrollState.animateScrollTo(scrollState.maxValue)
-                            }
-                        })
-                    )
+                    history.value = history.value + listOf(resEx)
+                },
+                onCopy = {text->
+                    clipMgr.setPrimaryClip(ClipData.newPlainText("Copied value", text))
+                    showToast("copied: $text")
                 }
-            }
+            )
         }
     }
-
 }
+
+// var history by remember { mutableStateOf( listOf(Equation("3+4", "7")) ) }
+@Preview
+@Composable
+fun Preview() {
+    var history = remember { mutableStateOf( listOf(Equation("3+4", "7")) ) }
+    Calclark(history, onEval={}, onCopy ={})
+}
+
+@Composable
+fun Calclark(history: State<List<Equation>>, onEval: (String)->Unit, onCopy: (String)->Unit) {
+    CalclarkTheme {
+        Column(modifier = Modifier.fillMaxSize()) {
+
+            val scrollState = rememberScrollState()
+            val cscope = rememberCoroutineScope()
+
+            Column(
+                modifier = Modifier
+                    .weight(1.0f)
+                    .verticalScroll(scrollState)
+            ) {
+                history.value.forEach {
+                    EquationRow(it, onCopyText = { text ->
+                        onCopy(text)
+                    })
+                }
+            }
+            var textState by remember { mutableStateOf("") }
+            TextField(
+                value = textState,
+                placeholder = { Text("ex: (3**2)/4") },
+                onValueChange = { textState = it },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                keyboardActions = KeyboardActions(onSend = {
+                    // ignore for empty case. (because often happens by accident).
+                    if (textState == "")
+                        return@KeyboardActions
+
+                    onEval(textState)
+                    textState = ""
+                    cscope.launch {
+                        scrollState.animateScrollTo(scrollState.maxValue)
+                    }
+                })
+            )
+        }
+    }
+}
+
 
 @Composable
 fun EquationRow(equation: Equation, onCopyText: (String)->Unit) {
