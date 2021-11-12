@@ -109,6 +109,62 @@ class MethodLibrary {
   }
 
   @StarlarkMethod(
+          name = "sum",
+          doc =
+                  "Return the sun of a 'start' value (default: 0) plus an iterable of numbers\n\n"
+                          + "When the iterable is empty, return the start value."
+                          + "<pre class=\"language-python\">sum([3, 5, 4]) == 12</pre>",
+          parameters = {
+                  @Param(name = "iterable", doc = "Target iterable to sum."),
+                  @Param(
+                          name = "start",
+                          doc = "An optional start value.",
+                          named = true,
+                          defaultValue = "0",
+                          positional = true),
+          })
+  public Object sum(StarlarkIterable<?> iterable, Object start)
+          throws EvalException {
+    int accI = 0;
+    double accF = 0.0;
+    boolean isInt = true;
+
+    if (start instanceof StarlarkInt) {
+      accI = ((StarlarkInt)start).toIntUnchecked();
+    } else if(start instanceof StarlarkFloat) {
+      isInt = false;
+      accF = ((StarlarkFloat)start).toDouble();
+    } else {
+      throw Starlark.errorf("can't convert start to numeric: %s", Starlark.type(start));
+    }
+
+    for(Object cur: iterable) {
+      if (isInt) {
+        if (cur instanceof StarlarkInt) {
+          accI += ((StarlarkInt)cur).toIntUnchecked();
+        } else if(cur instanceof StarlarkFloat) {
+          isInt = false;
+          accF = ((double)accI) + ((StarlarkFloat)cur).toDouble();
+        } else {
+          throw Starlark.errorf("can't convert elem to numeric: %s", Starlark.type(cur));
+        }
+      } else {
+        if (cur instanceof StarlarkInt) {
+          accF += ((StarlarkInt)cur).toDouble();
+        } else if(cur instanceof StarlarkFloat) {
+          accF += ((StarlarkFloat)cur).toDouble();
+        } else {
+          throw Starlark.errorf("can't convert elem to numeric: %s", Starlark.type(cur));
+        }
+      }
+    }
+    if (isInt)
+      return StarlarkInt.of(accI);
+    return StarlarkFloat.of(accF);
+  }
+
+
+    @StarlarkMethod(
       name = "sorted",
       doc =
           "Returns a new sorted list containing all the elements of the supplied iterable"
