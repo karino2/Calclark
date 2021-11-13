@@ -33,6 +33,22 @@ class InterpreterTest {
         assertEquals(StarlarkFloat.of(-9.0), res)
     }
 
+    private fun assertFloat(expect: Double, actual: Any, delta: Double) {
+        assertEquals(expect, (actual as StarlarkFloat).toDouble(), delta)
+    }
+
+    @Test
+    fun log10_isCorrect() {
+        val res = intp.evalString("log10(3)")
+        assertFloat(0.47712125471966244, res, 0.0001);
+    }
+
+    @Test
+    fun log_isCorrect() {
+        val res = intp.evalString("log(3)")
+        assertFloat(1.0986122886681098, res, 0.0001);
+    }
+
     /*
         sum tests
      */
@@ -75,30 +91,30 @@ class InterpreterTest {
     @Test
     fun sum_floatList() {
         val res = intp.evalString("sum([1.1, 2.1, 3.1])")
-        assertEquals(6.3, (res as StarlarkFloat).toDouble(), 0.0001)
+        assertFloat(6.3, res, 0.0001)
     }
 
     @Test
     fun sum_floatListWithIntStart() {
         val res = intp.evalString("sum([1.1, 2.1, 3.1], start=10)")
-        assertEquals(16.3, (res as StarlarkFloat).toDouble(), 0.0001)
+        assertFloat(16.3, res, 0.0001)
     }
 
     @Test
     fun sum_floatListWithFloatStart() {
         val res = intp.evalString("sum([1.1, 2.1, 3.1], start=10.1)")
-        assertEquals(16.4, (res as StarlarkFloat).toDouble(), 0.0001)
+        assertFloat(16.4, res, 0.0001)
     }
 
     @Test
     fun sum_mixedList() {
         val res = intp.evalString("sum([1, 2.1, 3])")
-        assertEquals(6.1, (res as StarlarkFloat).toDouble(), 0.0001)
+        assertFloat(6.1, res, 0.0001)
     }
 
     @Test
     fun sum_mixedList2() {
         val res = intp.evalString("sum([1.1, 2, 3])")
-        assertEquals(6.1, (res as StarlarkFloat).toDouble(), 0.0001)
+        assertFloat(6.1, res, 0.0001)
     }
 }

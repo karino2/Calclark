@@ -24,23 +24,25 @@ class MathFunctions {
         }
     }
 
+    private fun singleArgFloatFunc(x: Any, fname: String, f: (Double)->Double) : StarlarkFloat {
+        return toDouble(x)?.let { StarlarkFloat.of(f(it)) } ?: throw Starlark.errorf("Unsupported argument of $fname. %s", Starlark.type(x))
+    }
+
     @StarlarkMethod(
         name = "log",
         parameters = [Param(name = "x")],
         doc = "Returns the ln of its argument."
     )
-    fun mathLog(x: Any): StarlarkFloat {
-        return toDouble(x)?.let { StarlarkFloat.of(ln(it)) } ?: throw Starlark.errorf("Unsupported argument of log. %s", Starlark.type(x))
-    }
+    fun mathLog(x: Any) = singleArgFloatFunc(x, "log", ::ln)
 
     @StarlarkMethod(
         name = "log10",
         parameters = [Param(name = "x")],
         doc = "Returns the log base 10 of its argument."
     )
-    fun mathLog10(x: Any): StarlarkFloat {
-        return toDouble(x)?.let { StarlarkFloat.of(log10(it)) } ?: throw Starlark.errorf("Unsupported argument of log10. %s", Starlark.type(x))
-    }
+    fun mathLog10(x: Any) = singleArgFloatFunc(x, "log10", ::log10)
+
+
     @StarlarkMethod(
         name = "pow",
         parameters = [Param(name = "x"), Param(name = "y")],
