@@ -49,6 +49,17 @@ class InterpreterTest {
         assertFloat(1.0986122886681098, res, 0.0001);
     }
 
+    @Test
+    fun exp_isCorrect() {
+        val res = intp.evalString("exp(3)")
+        assertFloat(20.085536923187668, res, 0.0001);
+    }
+
+    @Test
+    fun sin_isCorrect() {
+        val res = intp.evalString("sin(3)")
+        assertFloat(0.1411200080598672, res, 0.0001);
+    }
     /*
         sum tests
      */
