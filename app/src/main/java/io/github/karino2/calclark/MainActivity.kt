@@ -53,7 +53,7 @@ class MainActivity : ComponentActivity() {
                         try {
                             val res = intp.evalString(text)
                             val resStr = res.toString()
-                            intp.outputs.addElement(res)
+                            intp.addOutput(res)
                             Equation(text, resStr)
                         } catch (e: Exception) {
                             Equation(text, "", e.message ?: "")

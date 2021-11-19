@@ -188,7 +188,16 @@ class Interpreter {
 
     private val evalThread: StarlarkThread by lazy { StarlarkThread(mutable, StarlarkSemantics.DEFAULT) }
 
-    val outputs by lazy { StarlarkList.newList<Any>(evalThread.mutability())!! }
+    private val outputs by lazy { StarlarkList.newList<Any>(evalThread.mutability())!! }
+
+    private var last : Any? = null
+
+    fun addOutput(res: Any) {
+        outputs.addElement(res)
+        module.setGlobal("__", last ?: Starlark.NONE)
+        module.setGlobal("_", res)
+        last = res
+    }
 
     fun evalString(expr: String) : Any {
         val input = ParserInput.fromString(expr, fileName)
