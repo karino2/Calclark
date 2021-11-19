@@ -175,6 +175,7 @@ class Interpreter {
     private fun makeEnv() : Map<String, Any> {
         val builder = ImmutableMap.builder<String, Any>()
         builder.put("pi", Math.PI)
+        builder.put("Out", outputs)
         Starlark.addMethods(builder, MathFunctions(), StarlarkSemantics.DEFAULT)
         return builder.build()
     }
@@ -186,6 +187,8 @@ class Interpreter {
     private val mutable: Mutability by lazy { Mutability.create(fileName) }
 
     private val evalThread: StarlarkThread by lazy { StarlarkThread(mutable, StarlarkSemantics.DEFAULT) }
+
+    val outputs by lazy { StarlarkList.newList<Any>(evalThread.mutability())!! }
 
     fun evalString(expr: String) : Any {
         val input = ParserInput.fromString(expr, fileName)

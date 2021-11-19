@@ -52,7 +52,9 @@ class MainActivity : ComponentActivity() {
                     val resEx =
                         try {
                             val res = intp.evalString(text)
-                            Equation(text, res.toString())
+                            val resStr = res.toString()
+                            intp.outputs.addElement(res)
+                            Equation(text, resStr)
                         } catch (e: Exception) {
                             Equation(text, "", e.message ?: "")
                         }
@@ -88,10 +90,12 @@ fun Calclark(history: State<List<Equation>>, onEval: (String)->Unit, onCopy: (St
                     .weight(1.0f)
                     .verticalScroll(scrollState)
             ) {
+                var outIdx = 0
                 history.value.forEach {
-                    EquationRow(it, onCopyText = { text ->
+                    EquationRow(it, outIdx, onCopyText = { text ->
                         onCopy(text)
                     })
+                    outIdx = if(it.isException) outIdx else outIdx+1
                 }
             }
 
@@ -206,7 +210,7 @@ fun RowScope.RadioLabel(text: String, checked: Boolean, onClick: ()->Unit) {
 
 
 @Composable
-fun EquationRow(equation: Equation, onCopyText: (String)->Unit) {
+fun EquationRow(equation: Equation, outIdx: Int, onCopyText: (String)->Unit) {
     Column(modifier=Modifier.padding(0.dp, 2.dp)) {
         Card(modifier= Modifier
             .fillMaxWidth()
@@ -227,10 +231,7 @@ fun EquationRow(equation: Equation, onCopyText: (String)->Unit) {
         else {
             Card(modifier=Modifier.fillMaxWidth(), border= BorderStroke(2.dp, Color.Black)) {
                 Row(modifier=Modifier.height(IntrinsicSize.Min)) {
-                    Text("=", fontSize = 20.sp, modifier = Modifier.padding(5.dp, 0.dp))
-                    Divider(color = Color.Black, modifier = Modifier
-                        .fillMaxHeight()
-                        .width(2.dp), thickness = 2.dp)
+                    Text("Out[$outIdx] =", fontSize = 20.sp, modifier = Modifier.padding(5.dp, 0.dp))
                     Text(equation.answer, fontSize = 20.sp, modifier = Modifier
                         .padding(5.dp, 0.dp)
                         .clickable(onClick = { onCopyText(equation.answer) }))
