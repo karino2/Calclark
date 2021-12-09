@@ -43,6 +43,32 @@ class MainActivity : ComponentActivity() {
     private var history = mutableStateOf(emptyList<Equation>())
     // var history by remember { mutableStateOf( listOf(Equation("3+4", "7")) ) }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        val hists = history.value
+        val expressions = hists.map { it.expression }.toTypedArray()
+        val types = hists.map { it.isException }.toBooleanArray()
+        val answerOrException = hists.map { if(it.isException) it.exception else it.answer }.toTypedArray()
+
+        outState.putStringArray("key_exps", expressions)
+        outState.putBooleanArray("key_types", types)
+        outState.putStringArray("key_aoe", answerOrException)
+
+        super.onSaveInstanceState(outState)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        val expressions = savedInstanceState.getStringArray("key_exps")!!
+        val types = savedInstanceState.getBooleanArray("key_types")!!
+        val answerOrException = savedInstanceState.getStringArray("key_aoe")!!
+
+        history.value = types.mapIndexed { idx, isexp ->
+            val answer = if(isexp) "" else answerOrException[idx]
+            val exception = if(isexp) answerOrException[idx] else ""
+            Equation(expressions[idx], answer, exception)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
