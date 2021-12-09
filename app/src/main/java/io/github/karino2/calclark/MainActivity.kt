@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -101,8 +102,9 @@ fun Calclark(history: State<List<Equation>>, onEval: (String)->Unit, onCopy: (St
 
             var isNumMode by remember { mutableStateOf(true) }
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+            Row(modifier = Modifier.fillMaxWidth().padding(5.dp, 0.dp), horizontalArrangement = Arrangement.Center) {
                 RadioLabel("num", isNumMode, onClick = { isNumMode = true })
+                Spacer(modifier = Modifier.size(5.dp))
                 RadioLabel("text", !isNumMode,
                     onClick = {
                         isNumMode = false
@@ -119,16 +121,16 @@ fun Calclark(history: State<List<Equation>>, onEval: (String)->Unit, onCopy: (St
             }
 
             if(isNumMode) {
-                Box(modifier=Modifier.padding(15.dp)) {
-                    Text(textState)
+                Box(modifier=Modifier.background(Color(0xFFDDDDDD)).fillMaxWidth().padding(15.dp)) {
+                    Text(textState, fontSize=20.sp)
                 }
 
                 fun appendSymbol(sym: String) {
                     textState += sym
                 }
 
-                Column(modifier=Modifier.weight(0.8f).background(Color.Gray)) {
-                    val opcolor = ButtonDefaults.buttonColors(backgroundColor = Color(0xFFA3E8FC), contentColor = Color.Black)
+                Column(modifier=Modifier.weight(0.7f).background(Color.Gray)) {
+                    val opcolor = ButtonDefaults.buttonColors(backgroundColor = Color(0xFFFFC606), contentColor = Color.Black)
                     val special = ButtonDefaults.buttonColors(backgroundColor = Color.DarkGray, contentColor = Color.White)
                     Row(modifier=Modifier.weight(1.0f)) {
                         CalcButton("AC", { textState = "" }, special)
@@ -158,7 +160,7 @@ fun Calclark(history: State<List<Equation>>, onEval: (String)->Unit, onCopy: (St
                         CalcButton("0", ::appendSymbol)
                         CalcButton(".", ::appendSymbol)
                         CalcButton("BS", { textState = textState.substring(0, (textState.length -1).coerceAtLeast(0) )}, special)
-                        CalcButton("|>", { doEval() }, ButtonDefaults.buttonColors(backgroundColor = Color(0xFFFFC606), contentColor = Color.Black))
+                        CalcButton("|>", { doEval() }, ButtonDefaults.buttonColors(backgroundColor = Color(0xFF21EEC7), contentColor = Color.White))
                     }
                 }
             } else {
@@ -167,6 +169,7 @@ fun Calclark(history: State<List<Equation>>, onEval: (String)->Unit, onCopy: (St
                     value = textState,
                     placeholder = { Text("ex: (3**2)/4") },
                     onValueChange = { textState = it },
+                    textStyle= TextStyle(fontSize=20.sp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focusRequester),
@@ -203,7 +206,7 @@ fun RowScope.RadioLabel(text: String, checked: Boolean, onClick: ()->Unit) {
         .weight(1.0f)
         .selectable(selected = checked, onClick = onClick)
         .background(color = bgcolor, shape = CircleShape)) {
-        Text(text, fontSize=20.sp, modifier=Modifier.align(Alignment.Center), color= contentColorFor(backgroundColor = bgcolor))
+        Text(text, fontSize=23.sp, modifier=Modifier.align(Alignment.Center), color= contentColorFor(backgroundColor = bgcolor))
     }
 
 }
@@ -211,32 +214,36 @@ fun RowScope.RadioLabel(text: String, checked: Boolean, onClick: ()->Unit) {
 
 @Composable
 fun EquationRow(equation: Equation, outIdx: Int, onCopyText: (String)->Unit) {
-    Column(modifier=Modifier.padding(0.dp, 2.dp)) {
-        Card(modifier= Modifier
-            .fillMaxWidth()
-            .clickable(onClick = { onCopyText(equation.expression) }), border= BorderStroke(2.dp, Color.Black)) {
-            Text(equation.expression, fontSize = 20.sp, modifier=Modifier.padding(4.dp, 0.dp))
-        }
-        if (equation.isException) {
-            Card(modifier=Modifier.fillMaxWidth(), border= BorderStroke(2.dp, Color.Black)) {
-                Row(modifier=Modifier.height(IntrinsicSize.Min)) {
-                    Text("exception", fontSize = 20.sp, color=Color.Red,  modifier = Modifier.padding(5.dp, 0.dp))
-                    Divider(color = Color.Black, modifier = Modifier
-                        .fillMaxHeight()
-                        .width(2.dp), thickness = 2.dp)
-                    Text(equation.exception, fontSize = 20.sp,  color=Color.Red, modifier = Modifier.padding(5.dp, 0.dp))
+    val textPadding = 10.dp
+    Card(elevation = 8.dp, modifier=Modifier.padding(4.dp)) {
+        Column {
+            Card(modifier= Modifier
+                .fillMaxWidth()
+                .clickable(onClick = { onCopyText(equation.expression) })) {
+                Text(equation.expression, fontSize = 20.sp, modifier=Modifier.background(Color(0xFFE0E0E0)).padding(textPadding, 0.dp))
+            }
+            if (equation.isException) {
+                Card(modifier=Modifier.fillMaxWidth(), border= BorderStroke(2.dp, Color.Black)) {
+                    Row(modifier=Modifier.height(IntrinsicSize.Min)) {
+                        Text("exception", fontSize = 20.sp, color=Color.Red,  modifier = Modifier.padding(textPadding, 0.dp))
+                        Divider(color = Color.Black, modifier = Modifier
+                            .fillMaxHeight()
+                            .width(2.dp), thickness = 2.dp)
+                        Text(equation.exception, fontSize = 20.sp,  color=Color.Red, modifier = Modifier.padding(textPadding, 0.dp))
+                    }
                 }
             }
-        }
-        else {
-            Card(modifier=Modifier.fillMaxWidth(), border= BorderStroke(2.dp, Color.Black)) {
-                Row(modifier=Modifier.height(IntrinsicSize.Min)) {
-                    Text("Out[$outIdx] =", fontSize = 20.sp, modifier = Modifier.padding(5.dp, 0.dp))
-                    Text(equation.answer, fontSize = 20.sp, modifier = Modifier
-                        .padding(5.dp, 0.dp)
-                        .clickable(onClick = { onCopyText(equation.answer) }))
+            else {
+                Card(modifier=Modifier.fillMaxWidth()) {
+                    Row(modifier=Modifier.height(IntrinsicSize.Min)) {
+                        Text("Out[$outIdx] =", fontSize = 20.sp, modifier = Modifier.padding(textPadding, 0.dp))
+                        Text(equation.answer, fontSize = 20.sp, modifier = Modifier
+                            .padding(5.dp, 0.dp)
+                            .clickable(onClick = { onCopyText(equation.answer) }))
+                    }
                 }
             }
+
         }
     }
 }
