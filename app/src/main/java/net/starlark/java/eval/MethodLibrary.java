@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//
+// karino2 changed this file from original Staralark
+//
+
 package net.starlark.java.eval;
 
 import com.google.common.base.Ascii;
