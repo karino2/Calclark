@@ -174,7 +174,7 @@ class Interpreter {
 
     private fun makeEnv() : Map<String, Any> {
         val builder = ImmutableMap.builder<String, Any>()
-        builder.put("pi", Math.PI)
+        builder.put("pi", StarlarkFloat.of(Math.PI))
         builder.put("Out", outputs)
         Starlark.addMethods(builder, MathFunctions(), StarlarkSemantics.DEFAULT)
         return builder.build()
