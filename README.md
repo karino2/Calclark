@@ -4,6 +4,8 @@ Calclark is a [Starlark](https://github.com/bazelbuild/starlark)(Python dialect 
 
 Use repl as a calculator for complex calculations.
 
+[Calclark - Apps on Google Play](https://play.google.com/store/apps/details?id=io.github.karino2.calclark)
+
 ## The difference between Starlark
 
 There are a few differences from Starlark.
